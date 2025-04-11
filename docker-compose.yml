@@ -1,0 +1,18 @@
+services:
+  dbwriterservice:
+    build: .  # Assuming your Dockerfile is in the same directory as docker-compose.yml
+    container_name: dbwriterservice
+    ports:
+      - "9099:9099"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://your_external_db_host:your_db_port;databaseName=your_db_name
+      SPRING_DATASOURCE_USERNAME: your_db_user
+      SPRING_DATASOURCE_PASSWORD: your_db_password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+      KAFKA_TOPIC: tradeport-notified
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    external: true
