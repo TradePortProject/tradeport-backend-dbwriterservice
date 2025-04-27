@@ -1,5 +1,6 @@
 services:
   dbwriterservice:
+    image: dbwriterservice
     build: .  # Assuming your Dockerfile is in the same directory as docker-compose.yml
     container_name: dbwriterservice
     ports:
