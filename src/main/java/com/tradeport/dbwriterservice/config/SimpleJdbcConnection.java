@@ -20,16 +20,16 @@ public class SimpleJdbcConnection {
     private String dbPassword;
 
     public SimpleJdbcConnection() {
-        System.out.println("SimpleJdbcConnection bean initialized!");
+        System.out.println("SimpleJdbcConnection bean initialized!!");
     }
     public Connection getConnection() throws SQLException {
         try {
-            dbUrl="jdbc:sqlserver://localhost:1433;databaseName=tradeportdb;encrypt=true;trustServerCertificate=true";
+            dbUrl="jdbc:sqlserver://mssql:1433;databaseName=tradeportdb;encrypt=true;trustServerCertificate=true";
             dbUser="sa";
             dbPassword="Your_password123";
-            System.err.println("dbUrl: " + dbUrl);
-            System.err.println("dbUser: " + dbUser);
-            System.err.println("dbPassword: " + dbPassword);
+            //System.err.println("dbUrl: " + dbUrl);
+            //System.err.println("dbUser: " + dbUser);
+            //System.err.println("dbPassword: " + dbPassword);
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver"); // Load the SQL Server JDBC driver
             return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
         } catch (ClassNotFoundException e) {
