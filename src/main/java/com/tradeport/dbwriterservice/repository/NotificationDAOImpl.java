@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 @Repository
 public class NotificationDAOImpl implements DatabaseDAO<NotificationTO> {
@@ -36,7 +37,10 @@ public class NotificationDAOImpl implements DatabaseDAO<NotificationTO> {
             pstmt.setString(8, notificationTO.getFromEmail());
             pstmt.setString(9, notificationTO.getRecipientEmail());
             pstmt.setString(10, notificationTO.getFailureReason());
-            pstmt.setTimestamp(11, new java.sql.Timestamp(notificationTO.getSentTime().getTime()));
+            //pstmt.setTimestamp(11, new java.sql.Timestamp(notificationTO.getSentTime().getTime()));
+            // Adding null check for sentTime
+            Timestamp sentTime = notificationTO.getSentTime() != null ? new java.sql.Timestamp(notificationTO.getSentTime().getTime()) : null;
+            pstmt.setTimestamp(11, sentTime);
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
