@@ -1,3 +1,5 @@
+# .github/workflows/cd.yml
+
 name: CD - Stage 1 - Deploy to DockerHub
 
 on:
@@ -27,57 +29,58 @@ jobs:
           java-version: '17'
           cache: 'maven' # Optional: Cache Maven dependencies
 
-      - name: Run Unit Tests
-        run: mvn test
-
-      # Compile, package, AND prepare for Sonar analysis in one command
-      # The verify goal often includes test execution and packaging phases
-      # It also generates necessary reports for SonarQube
-      - name: Build, Package, and Prepare Sonar Analysis
-        run: mvn verify sonar:sonar \
-              -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-              -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+      # Build, package, run tests, AND prepare for Sonar analysis in one command
+      # The verify goal runs phases up to 'verify' (includes compile, test, package)
+      # The sonar:sonar goal performs the analysis using the Maven plugin
+      # Run the command on a single line to avoid shell parsing issues with line breaks
+      - name: Build, Package, Test, and Analyze
+        run: mvn verify sonar:sonar -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
-           # Required for SonarQube analysis on Pull Requests
+          # Required by SonarCloud for Pull Request decoration / analysis
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Pass token via env variable as well
+          # Token for authenticating with SonarCloud
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # Optional: Verify compiled classes exist (useful for debugging)
       - name: Verify Compiled Classes Exist
         run: |
           echo "Checking for compiled Java classes in target/classes..."
-          ls -l target
+          ls -l target || echo "INFO: target/ directory might not exist if build failed."
           ls -l target/classes || echo "WARNING: target/classes directory is missing!"
-          find target/classes -name "*.class" || echo "WARNING: No compiled class files found!"
-
+          # Use find and check exit code to avoid workflow error if no files found
+          find target/classes -name "*.class" > /dev/null 2>&1
+          if [ $? -ne 0 ]; then
+            echo "WARNING: No compiled class files found in target/classes!"
+          else
+            echo "INFO: Compiled class files found."
+          fi
 
   deploy:
     name: Build and Deploy Docker Image
     runs-on: ubuntu-latest
-    # This job now depends on the combined build_and_scan job
+    # This job now depends on the combined build_and_scan job succeeding
     needs: build_and_scan
-    # Only run deployment on pushes to main, not on PRs
+    # IMPORTANT: Only run deployment on actual pushes to the main branch,
+    # not on pull request builds or pushes to other branches.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3 # Use a more recent version
+        uses: docker/setup-buildx-action@v3 # Use v3 or latest stable
 
       - name: Log In to Docker Hub
-        uses: docker/login-action@v3 # Use dedicated action for login
+        uses: docker/login-action@v3 # Use v3 or latest stable
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5 # Use a more recent version
+        uses: docker/build-push-action@v5 # Use v5 or latest stable
         with:
-          context: . # Assuming Dockerfile is in the root, adjust if needed
-          # Correct the file path if it's not in the root
+          context: . # Assumes Dockerfile is in the root of the repository checkout
+          # If your Dockerfile is in a subdirectory (like the original example), uncomment and adjust path:
           # file: ./tradeport-backend-dbwriterservice/Dockerfile
           push: true
-          tags: prabhulalithakrishnan/dbwriterservice:latest
+          tags: prabhulalithakrishnan/dbwriterservice:latest # Adjust tag as needed
