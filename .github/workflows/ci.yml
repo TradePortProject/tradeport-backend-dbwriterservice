@@ -43,8 +43,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug Target Directory
-        run: ls -l || echo "WARNING: No target/ directory found!"
+      #- name: Debug Target Directory
+       # run: ls -l || echo  " WARNING: No target directory found"
 
       - name: Debug Compilation Issues Before Sonar
         run: |
