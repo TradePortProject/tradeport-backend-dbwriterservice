@@ -9,77 +9,75 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build, Test, and Security Scan
+  # Combine Build, Test, and Sonar Analysis into one job
+  build_and_scan:
+    name: Build, Test, and Analyze
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        # Required for SonarQube PR analysis to fetch git history
+        with:
+          fetch-depth: 0
 
       - name: Set Up Java and Maven
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'maven' # Optional: Cache Maven dependencies
 
       - name: Run Unit Tests
         run: mvn test
 
-      - name: Compile and Package the Java Project
-        run: mvn clean package  # Ensures compiled classes exist
+      # Compile, package, AND prepare for Sonar analysis in one command
+      # The verify goal often includes test execution and packaging phases
+      # It also generates necessary reports for SonarQube
+      - name: Build, Package, and Prepare Sonar Analysis
+        run: mvn verify sonar:sonar \
+              -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+              -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        env:
+           # Required for SonarQube analysis on Pull Requests
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Pass token via env variable as well
 
+      # Optional: Verify compiled classes exist (useful for debugging)
       - name: Verify Compiled Classes Exist
         run: |
-          echo "Checking for compiled Java classes..."
+          echo "Checking for compiled Java classes in target/classes..."
           ls -l target
           ls -l target/classes || echo "WARNING: target/classes directory is missing!"
           find target/classes -name "*.class" || echo "WARNING: No compiled class files found!"
-
-  sonar:
-    name: SonarQube Static Analysis
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Debug Compilation Issues Before Sonar
-        run: |
-          echo "Checking compiled Java classes..."
-          ls -l target || echo "WARNING: target/ directory is missing!"
-          ls -l classes || echo "WARNING: classes/ directory is missing!"
-          find . -name "*.class" || echo "WARNING: No compiled class files found!"
-
-      - name: Run SonarQube Analysis
-        uses: sonarsource/sonarcloud-github-action@master
-        with:
-          args: >
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-            -Dsonar.java.binaries=classes
-
 
 
   deploy:
     name: Build and Deploy Docker Image
     runs-on: ubuntu-latest
-    needs: sonar
+    # This job now depends on the combined build_and_scan job
+    needs: build_and_scan
+    # Only run deployment on pushes to main, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3 # Use a more recent version
 
       - name: Log In to Docker Hub
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        uses: docker/login-action@v3 # Use dedicated action for login
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5 # Use a more recent version
         with:
-          context: .
-          file: ../tradeport-backend-dbwriterservice/Dockerfile
+          context: . # Assuming Dockerfile is in the root, adjust if needed
+          # Correct the file path if it's not in the root
+          # file: ./tradeport-backend-dbwriterservice/Dockerfile
           push: true
           tags: prabhulalithakrishnan/dbwriterservice:latest
