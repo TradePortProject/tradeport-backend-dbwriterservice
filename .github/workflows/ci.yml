@@ -43,18 +43,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug Target Directory
+        run: ls -l || echo "WARNING: No target/ directory found!"
+
       - name: Debug Compilation Issues Before Sonar
         run: |
           echo "Checking compiled Java classes..."
-          ls -l target
-          ls -l target/classes || echo "WARNING: target/classes directory is missing!"
+          ls -l target || echo "WARNING: target/ directory is missing!"
+          ls -l target/classes || echo "WARNING: target/classes/ directory is missing!"
           find target/classes -name "*.class" || echo "WARNING: No compiled class files found!"
-
-      - name: Debug SonarQube Configuration
-        run: |
-          echo "Sonar Project Key: ${{ secrets.SONAR_PROJECT_KEY }}"
-          echo "Sonar Organization: ${{ secrets.SONAR_ORGANIZATION }}"
-          echo "Sonar Token Set: ${{ secrets.SONAR_TOKEN != '' }}"
 
       - name: Run SonarQube Analysis
         uses: sonarsource/sonarcloud-github-action@master
@@ -65,6 +62,7 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.java.binaries=target/classes
+
 
   deploy:
     name: Build and Deploy Docker Image
