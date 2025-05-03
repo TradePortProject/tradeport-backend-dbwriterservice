@@ -56,30 +56,56 @@ jobs:
           fi
 
   deploy:
-      name: Build and Deploy Docker Image
-      runs-on: ubuntu-latest
-      needs: build_and_scan
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      steps:
-        - name: Checkout Code
-          uses: actions/checkout@v4
-  
-        - name: Set Up Docker Buildx
-          uses: docker/setup-buildx-action@v3
-  
-        - name: Install Docker Compose
-          run: sudo apt-get update && sudo apt-get install -y docker-compose
-  
-        - name: Verify Docker Compose Installation
-          run: docker compose version
-  
-        - name: Log in to Docker Hub
-          run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-  
-        - name: Build and Push Docker Image using Docker Compose
-          run: |
-            docker compose -f docker-compose.yml build
-            docker compose -f docker-compose.yml push
+    name: Build and Deploy Docker Image
+    runs-on: ubuntu-latest
+    needs: build_and_scan # Depends on the previous job
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Only run on push to main
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Download the application JAR artifact from the previous job
+      - name: Download JAR Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: java-app-jar # Name of the artifact to download
+          # Download it into a 'target' directory so the Dockerfile COPY command works
+          path: target/
+
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Optional: Keep manual install or use an action
+      - name: Install Docker Compose
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          echo "~/.docker/cli-plugins" >> $GITHUB_PATH # Add compose to PATH
+          docker compose version
+
+      - name: Verify `docker-compose.yml` and downloaded JAR
+        run: |
+          echo "Checking for docker-compose.yml..."
+          ls -l ./docker-compose.yml || (echo "ERROR: docker-compose.yml not found!" && exit 1)
+          echo "Checking for downloaded JAR in target/..."
+          ls -l target/ || (echo "ERROR: target/ directory or JAR not found after download!" && exit 1)
+          ls -l target/*.jar || (echo "ERROR: JAR file not found in target/ directory!" && exit 1)
+
+
+      # Use the dedicated action for login - more secure and robust
+      - name: Log In to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Ensure secret names match your repo settings
+          password: ${{ secrets.DOCKERHUB_TOKEN }}    # Ensure secret names match your repo settings
+
+      - name: Build and Push Docker Image using Docker Compose
+        run: |
+          echo "Building images..."
+          docker compose -f docker-compose.yml build
+          echo "Pushing images..."
+          docker compose -f docker-compose.yml push
 
 
 
