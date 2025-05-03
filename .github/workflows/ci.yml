@@ -24,6 +24,8 @@ jobs:
 
       - name: Run Unit Tests
         run: mvn test
+      - name: Build the Java Project
+        run: mvn clean compile        
 
       #- name: Run OWASP Dependency Check
       #  run: |
@@ -61,7 +63,8 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}      
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.java.binaries=target/classes
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
