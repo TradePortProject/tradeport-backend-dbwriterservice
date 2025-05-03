@@ -43,15 +43,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      #- name: Debug Target Directory
-       # run: ls -l || echo  " WARNING: No target directory found"
+      - name: Debug Target Directory
+        run: ls -l || echo "WARNING: No target/ directory found!"
 
       - name: Debug Compilation Issues Before Sonar
         run: |
           echo "Checking compiled Java classes..."
           ls -l target || echo "WARNING: target/ directory is missing!"
-          ls -l target/classes || echo "WARNING: target/classes/ directory is missing!"
-          find target/classes -name "*.class" || echo "WARNING: No compiled class files found!"
+          ls -l classes || echo "WARNING: classes/ directory is missing!"
+          find . -name "*.class" || echo "WARNING: No compiled class files found!"
 
       - name: Run SonarQube Analysis
         uses: sonarsource/sonarcloud-github-action@master
@@ -61,7 +61,8 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-            -Dsonar.java.binaries=target/classes
+            -Dsonar.java.binaries=classes
+
 
 
   deploy:
