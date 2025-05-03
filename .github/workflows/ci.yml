@@ -25,11 +25,15 @@ jobs:
       - name: Run Unit Tests
         run: mvn test
 
-      - name: Build the Java Project
-        run: mvn clean package  # Changed from compile to package
+      - name: Compile and Package the Java Project
+        run: mvn clean package  # Ensures compiled classes exist
 
       - name: Verify Compiled Classes Exist
-        run: ls -l target/classes  # Debugging step
+        run: |
+          echo "Checking for compiled Java classes..."
+          ls -l target
+          ls -l target/classes || echo "WARNING: target/classes directory is missing!"
+          find target/classes -name "*.class" || echo "WARNING: No compiled class files found!"
 
   sonar:
     name: SonarQube Static Analysis
@@ -39,16 +43,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Verify Compiled Java Classes
+      - name: Debug Compilation Issues Before Sonar
         run: |
-          echo "Checking if compiled classes exist..."
-          find target/classes -name "*.class"
+          echo "Checking compiled Java classes..."
+          ls -l target
+          ls -l target/classes || echo "WARNING: target/classes directory is missing!"
+          find target/classes -name "*.class" || echo "WARNING: No compiled class files found!"
 
       - name: Debug SonarQube Configuration
         run: |
-          echo "Sonar Project Key:" ${{ secrets.SONAR_PROJECT_KEY }}
-          echo "Sonar Organization:" ${{ secrets.SONAR_ORGANIZATION }}
-          echo "Sonar Token Set:" ${{ secrets.SONAR_TOKEN != '' }}
+          echo "Sonar Project Key: ${{ secrets.SONAR_PROJECT_KEY }}"
+          echo "Sonar Organization: ${{ secrets.SONAR_ORGANIZATION }}"
+          echo "Sonar Token Set: ${{ secrets.SONAR_TOKEN != '' }}"
 
       - name: Run SonarQube Analysis
         uses: sonarsource/sonarcloud-github-action@master
