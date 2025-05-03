@@ -55,29 +55,26 @@ jobs:
             echo "INFO: Compiled class files found."
           fi
 
-  deploy:
+deploy:
     name: Build and Deploy Docker Image
     runs-on: ubuntu-latest
-    # This job now depends on the combined build_and_scan job succeeding
     needs: build_and_scan
-    # IMPORTANT: Only run deployment on actual pushes to the main branch,
-    # not on pull request builds or pushes to other branches.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3 # Use v3 or latest stable
+        uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub  # Authenticate with Docker Hub
+      - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5 # Use v5 or latest stable
+        uses: docker/build-push-action@v5
         with:
-          context: . # Assumes Dockerfile is in the root of the repository checkout
-          #If your Dockerfile is in a subdirectory (like the original example), uncomment and adjust path:
+          context: ./tradeport-backend-dbwriterservice # Adjust if your Dockerfile is in another directory
           file: ./tradeport-backend-dbwriterservice/Dockerfile
           push: true
-          tags: prabhulalithakrishnan/dbwriterservice:latest # Adjust tag as needed
+          tags: prabhulalithakrishnan/dbwriterservice:latest
+
