@@ -67,12 +67,18 @@ jobs:
         - name: Set Up Docker Buildx
           uses: docker/setup-buildx-action@v3
   
+        - name: Install Docker Compose
+          run: sudo apt-get update && sudo apt-get install -y docker-compose
+  
+        - name: Verify Docker Compose Installation
+          run: docker compose version
+  
         - name: Log in to Docker Hub
           run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
   
         - name: Build and Push Docker Image using Docker Compose
           run: |
-            docker-compose -f ./tradeport-backend-dbwriterservice/docker-compose.yml build
-            docker-compose -f ./tradeport-backend-dbwriterservice/docker-compose.yml push
+            docker compose -f ./tradeport-backend-dbwriterservice/docker-compose.yml build
+            docker compose -f ./tradeport-backend-dbwriterservice/docker-compose.yml push
 
 
