@@ -39,14 +39,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug Sonar Binaries Path
-        run: ls -l target/classes
-              
+      - name: Verify Compiled Java Classes
+        run: |
+          echo "Checking if compiled classes exist..."
+          find target/classes -name "*.class"
+
       - name: Debug SonarQube Configuration
         run: |
-          echo "Sonar Project Key: ${{ secrets.SONAR_PROJECT_KEY }}"
-          echo "Sonar Organization: ${{ secrets.SONAR_ORGANIZATION }}"
-          echo "Sonar Token Set: ${{ secrets.SONAR_TOKEN != '' }}"
+          echo "Sonar Project Key:" ${{ secrets.SONAR_PROJECT_KEY }}
+          echo "Sonar Organization:" ${{ secrets.SONAR_ORGANIZATION }}
+          echo "Sonar Token Set:" ${{ secrets.SONAR_TOKEN != '' }}
 
       - name: Run SonarQube Analysis
         uses: sonarsource/sonarcloud-github-action@master
