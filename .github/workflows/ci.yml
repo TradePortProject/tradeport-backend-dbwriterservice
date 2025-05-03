@@ -80,7 +80,7 @@ jobs:
         uses: docker/build-push-action@v5 # Use v5 or latest stable
         with:
           context: . # Assumes Dockerfile is in the root of the repository checkout
-          # If your Dockerfile is in a subdirectory (like the original example), uncomment and adjust path:
-          # file: ./tradeport-backend-dbwriterservice/Dockerfile
+          #If your Dockerfile is in a subdirectory (like the original example), uncomment and adjust path:
+          file: ./tradeport-backend-dbwriterservice/Dockerfile
           push: true
           tags: prabhulalithakrishnan/dbwriterservice:latest # Adjust tag as needed
