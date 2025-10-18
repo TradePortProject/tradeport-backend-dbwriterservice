@@ -24,9 +24,9 @@ public class SimpleJdbcConnection {
     }
     public Connection getConnection() throws SQLException {
         try {
-            dbUrl="jdbc:sqlserver://mssql:1433;databaseName=tradeportdb;encrypt=true;trustServerCertificate=true";
-            dbUser="sa";
-            dbPassword="Your_password123";
+            dbUrl = "jdbc:sqlserver://tradeport-sql-dev.c5kwkewc853y.ap-southeast-1.rds.amazonaws.com:1433;databaseName=tradeportdb;encrypt=true;trustServerCertificate=true";
+            dbUser="usermgmt_app";
+            dbPassword="tradeport@Password123";
             //System.err.println("dbUrl: " + dbUrl);
             //System.err.println("dbUser: " + dbUser);
             //System.err.println("dbPassword: " + dbPassword);
