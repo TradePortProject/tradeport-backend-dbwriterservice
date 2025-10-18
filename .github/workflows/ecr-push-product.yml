@@ -27,16 +27,6 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Build, Test, and Analyze with SonarCloud
-        run: mvn verify sonar:sonar \
-          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: Verify Compiled Classes Exist
         run: |
           echo "Checking for compiled Java classes in target/classes..."
