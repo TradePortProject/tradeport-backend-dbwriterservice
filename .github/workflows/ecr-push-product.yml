@@ -10,8 +10,8 @@ on:
         type: boolean
 
 jobs:
-  build_test_scan_push:
-    name: Build, Analyze, and Push
+  build_and_push:
+    name: Build and Push DBWriter
     runs-on: ubuntu-latest
 
     steps:
@@ -27,16 +27,8 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Verify Compiled Classes Exist
-        run: |
-          echo "Checking for compiled Java classes in target/classes..."
-          ls -l target/classes || echo "WARNING: target/classes directory is missing!"
-          find target/classes -name "*.class" > /dev/null 2>&1
-          if [ $? -ne 0 ]; then
-            echo "WARNING: No compiled class files found!"
-          else
-            echo "INFO: Compiled class files found."
-          fi
+      - name: Build with Maven
+        run: mvn clean install
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -49,25 +41,21 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, Tag, and Push DBWriter Image to ECR
+      - name: Build and Push Docker Image
         run: |
-          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          SHORT_SHA=${GITHUB_SHA:0:7}
           BUILD_NUMBER=${GITHUB_RUN_NUMBER}
           IMAGE_TAG="v1.0.${BUILD_NUMBER}"
-
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY=${{ secrets.ECR_REPO_DBWRITER }}
 
           echo "🏗️ Building image: $IMAGE_TAG"
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ./Dockerfile .
-
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Clean up old ECR images (keep only last 2)
+      - name: Clean up old ECR images (keep last 2)
         if: success() && github.event.inputs.force_cleanup == 'true'
         run: |
           ECR_REPOSITORY=${{ secrets.ECR_REPO_DBWRITER }}
@@ -94,27 +82,4 @@ jobs:
             done
           else
             echo "✅ No cleanup needed"
-          fi
-
-      - name: Show Remaining Images and Cost Summary
-        if: success()
-        run: |
-          ECR_REPOSITORY=${{ secrets.ECR_REPO_DBWRITER }}
-          aws ecr describe-images \
-            --repository-name $ECR_REPOSITORY \
-            --query 'imageDetails[*].[imageTags[0],imageSizeInBytes,imagePushedAt]' \
-            --output table
-
-          TOTAL_SIZE=$(aws ecr describe-images \
-            --repository-name $ECR_REPOSITORY \
-            --query 'sum(imageDetails[].imageSizeInBytes)' \
-            --output text)
-
-          if [ "$TOTAL_SIZE" != "None" ] && [ "$TOTAL_SIZE" != "0" ]; then
-            TOTAL_GB=$(echo "scale=3; $TOTAL_SIZE / 1024 / 1024 / 1024" | bc -l)
-            MONTHLY_COST=$(echo "scale=2; $TOTAL_GB * 0.10" | bc -l)
-            echo "💰 Storage: ${TOTAL_GB} GB"
-            echo "💵 Estimated monthly cost: \$${MONTHLY_COST}"
-          else
-            echo "📊 Repository is empty"
           fi
