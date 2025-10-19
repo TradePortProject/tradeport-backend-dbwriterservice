@@ -16,7 +16,7 @@ EXPOSE 9099
 ENV SPRING_DATASOURCE_URL=jdbc:sqlserver://localhost:1433;databaseName=your_db_name
 ENV SPRING_DATASOURCE_USERNAME=your_db_user
 ENV SPRING_DATASOURCE_PASSWORD=your_db_password
-ENV SPRING_KAFKA_BOOTSTRAP_SERVERS=my-kafka-cluster-kafka-bootstrap.kafka-namespace:9092
+ENV SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka.backend-namespace-ec2.svc.cluster.local:9092
 ENV KAFKA_TOPIC=your_kafka_topic
 
 # Define the command to run the Spring Boot application
