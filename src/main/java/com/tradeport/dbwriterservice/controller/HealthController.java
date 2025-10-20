@@ -13,7 +13,7 @@ public class HealthController {
 
     @GetMapping("/ready")
     public String readinessCheck() { 
-        // You can add logic here to check DB connections, caches, etc.
+        // You can add logic here to check DB connections, caches, etc.  
         return "READY";
     }
 }
