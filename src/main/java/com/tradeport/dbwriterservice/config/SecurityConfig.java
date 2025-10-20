@@ -8,7 +8,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig { 
+public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -18,7 +18,7 @@ public class SecurityConfig {
                         // Permit unauthenticated access to the health and readiness probes
                         .requestMatchers("/health", "/ready").permitAll()
 
-                        // Require authentication for all other endpoints
+                        // Require authentication for all other endpoints 0000
                         .anyRequest().authenticated()
                 )
 
